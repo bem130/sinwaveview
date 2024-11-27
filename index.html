@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/gh/neknaj/cDom/cdom.js"></script>
+        <script src="https://cdn.jsdelivr.net/gh/neknaj/webSplitLayout/type1/layout.js"></script>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/neknaj/webSplitLayout/type1/layout.css"></head>
+    </head>
+    <body>
+        <div id="layoutroot"></div>
+    </body>
+</html>
+<script>
+
+var Params = {}
+var Slice = {}
+var Render = {}
+
+document.querySelector("#layoutroot").addEventListener("doneinitlayout",()=>{
+    console.log("done init")
+})
+
+function config_param_ui(name,description,init_value=1,min=0,max=10) {
+    Params[name] = init_value;
+    let slider = elm("input",{type:"range",min,max,value:init_value,step:1/100},[]);
+    let input = elm("input",{type:"number",min,max,value:init_value,step:1/10},[]);
+    return elm("p",{class:"config_param_ui"},[
+        elm("label",{},[textelm(name)]),
+        elm("label",{},[textelm(":")]),
+        slider.Listen("input",(e)=>{
+            let value = Number(e.target.value);
+            Params[name] = value;
+            slider.value = value;
+            input.value = value;
+        }),
+        input.Listen("input",(e)=>{
+            let value = Number(e.target.value);
+            Params[name] = value;
+            slider.value = value;
+            input.value = value;
+        }),
+        elm("label",{},[textelm(":")]),
+        elm("label",{},[textelm(description)]),
+    ])
+}
+function config_slice_ui(name,id,init_value=1,min=0,max=10) {
+    Slice[id] = init_value;
+    let input = elm("input",{type:"number",min,max,value:init_value,step:1/10},[]);
+    return elm("p",{class:"config_slice_ui"},[
+        elm("label",{},[textelm(name)]),
+        elm("label",{},[textelm(":")]),
+        elm("label",{},[textelm(id)]),
+        elm("label",{},[textelm("=")]),
+        input.Listen("input",(e)=>{
+            let value = Number(e.target.value);
+            Slice[id] = value;
+            input.value = value;
+        }),
+    ])
+}
+function config_render_ui(name,id,init_value=1,min=0,max=10) {
+    Render[id] = init_value;
+    let input = elm("input",{type:"number",min,max,value:init_value,step:1/10},[]);
+    return elm("p",{class:"config_render_ui"},[
+        elm("label",{},[textelm(name)]),
+        elm("label",{},[textelm(":")]),
+        input.Listen("input",(e)=>{
+            let value = Number(e.target.value);
+            Render[id] = value;
+            input.value = value;
+        }),
+    ])
+}
+
+initlayout(
+    document.querySelector("#layoutroot"),
+    ["h",[5,6],[
+        ["c","xyt"],
+        ["v",[4,4,3],[["c","xy"],["c","yt"],["h",[4,3],[["c","config_param"],["v",[1,1],[["c","config_slice"],["c","config_render"]]]]]]],
+    ]],
+    {
+        xyt: ()=>{return elm("h1",{},[textelm("XYT-graph")])},
+        xy: ()=>{return elm("h1",{},[textelm("XY-graph")])},
+        yt: ()=>{return elm("h1",{},[textelm("YT-graph")])},
+        config_param: ()=>{return elm("div",{},[
+            config_param_ui("A","Amplitude"),
+            config_param_ui("T","Period"),
+            config_param_ui("λ","Wavelength"),
+            config_param_ui("φ","Initial Phase"),
+        ])},
+        config_slice: ()=>{return elm("div",{},[
+            config_slice_ui("xy - slice","t",0.01),
+            config_slice_ui("yt - slice","x",0.01),
+        ])},
+        config_render: ()=>{return elm("div",{},[
+            config_render_ui("x-axis sampling step","x",0.01),
+            config_render_ui("t-axis sampling step","t",0.01),
+        ])},
+    }
+)
+
+</script>
+<style>
+
+:root {
+    color-scheme: dark;
+    user-select: none;
+}
+body {
+    margin: 0;
+    padding: 0;
+    height: 100dvh;
+    width: 100dvw;
+    overflow: hidden;
+}
+#layoutroot {
+    height: 100%;
+    width: 100%;
+}
+.layoutcontent {
+    --padding: 10px;
+    overflow: auto;
+    padding: var(--padding);
+    height: calc(100% - var(--padding) - 2px) !important;
+}
+.config_param_ui {
+    width: fit-content;
+    --height: 30px;
+    & input, label {
+        display: inline-block;
+        height: var(--height);
+        line-height: var(--height);
+        vertical-align: middle;
+    }
+    & label:nth-child(1) {
+        width: 20px;
+    }
+    & label:nth-child(2) {
+        margin-right: 20px;
+    }
+    & label:nth-child(5) {
+        margin-left: 20px;
+    }
+    & label:nth-child(6) {
+        margin-left: 10px;
+        width: 100px;
+    }
+}
+.config_slice_ui {
+    width: fit-content;
+    --height: 30px;
+    & input, label {
+        display: inline-block;
+        height: var(--height);
+        line-height: var(--height);
+        vertical-align: middle;
+    }
+    & label:nth-child(1) {
+        width: 75px;
+    }
+    & label:nth-child(2) {
+        margin-right: 20px;
+    }
+    & label:nth-child(3) {
+        width: 15px;
+    }
+    & label:nth-child(4) {
+        width: 20px;
+    }
+}
+.config_render_ui {
+    width: fit-content;
+    --height: 30px;
+    & input, label {
+        display: inline-block;
+        height: var(--height);
+        line-height: var(--height);
+        vertical-align: middle;
+    }
+    & label:nth-child(1) {
+        width: 170px;
+    }
+    & label:nth-child(2) {
+        margin-right: 20px;
+    }
+}
+</style>
