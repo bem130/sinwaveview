@@ -386,12 +386,21 @@ requestAnimationFrame(()=>{
             YTslice.add(line);
         }
     }
+    function onWindowResize() {
+        const render_area = canvas.parentNode.getBoundingClientRect();
+        canvas.width = render_area.width;
+        canvas.height = render_area.height;
+        camera.aspect = render_area.width / render_area.height;
+        camera.updateProjectionMatrix();
+        renderer.setSize(render_area.width, render_area.height);
+    }
 
     draw()
     function draw() {
         buildSurface();
         buildXYslice();
         buildYTslice();
+        onWindowResize();
         renderer.render(scene, camera);
         requestAnimationFrame(draw);
     }
@@ -460,7 +469,7 @@ requestAnimationFrame(()=>{
             ytctx.stroke();
             ytctx.beginPath();
             ytctx.moveTo(origin[0],margin);
-            ytctx.lineTo(origin[0],xycnv.height-margin);
+            ytctx.lineTo(origin[0],ytcnv.height-margin);
             ytctx.stroke();
         }
         { // 曲線
