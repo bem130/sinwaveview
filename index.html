@@ -288,9 +288,10 @@ requestAnimationFrame(()=>{
             vertices[i*3+1] = positions[i][1];
             vertices[i*3+2] = positions[i][2];
         }
+        var buffer = new THREE.BufferAttribute(vertices, 3);
         {
             var geometry = new THREE.BufferGeometry();
-            geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+            geometry.setAttribute('position', buffer);
             geometry.setIndex(new THREE.BufferAttribute(new Uint16Array(indices1), 1));
             var material = new THREE.MeshBasicMaterial({
                 color: 0xaaaa00,
@@ -303,7 +304,7 @@ requestAnimationFrame(()=>{
         }
         {
             var geometry = new THREE.BufferGeometry();
-            geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+            geometry.setAttribute('position', buffer);
             geometry.setIndex(new THREE.BufferAttribute(new Uint16Array(indices2), 1));
             var material = new THREE.MeshBasicMaterial({
                 color: 0xaa00aa,
@@ -335,6 +336,7 @@ requestAnimationFrame(()=>{
                 square.position.x = (Render.rx_+Render._rx)/2;
                 square.position.z = -Slice.t;
                 XYslice.add(square);
+                square.renderOrder = 1;
             }
         }
         { // 線
@@ -371,6 +373,7 @@ requestAnimationFrame(()=>{
                 square.position.x = (Render.rt_+Render._rt)/2;
                 square.position.x = Slice.x;
                 YTslice.add(square);
+                square.renderOrder = 1;
             }
         }
         { // 線
