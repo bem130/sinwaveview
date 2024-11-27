@@ -46,9 +46,9 @@ var Render = {}
             elm("label",{},[textelm(description)]),
         ])
     }
-    function config_slice_ui(name,id,init_value=1,min=-5,max=5) {
+    function config_slice_ui(name,id,init_value=1,min=-10,max=10) {
         Slice[id] = init_value;
-        let slider = elm("input",{type:"range",min,max,value:init_value,step:1/100},[]);
+        let slider = elm("input",{id:`slider_${id}`,type:"range",min,max,value:init_value,step:1/100},[]);
         let input = elm("input",{type:"number",min,max,value:init_value,step:1/10},[]);
         return elm("p",{class:"config_slice_ui"},[
             elm("label",{},[textelm(name)]),
@@ -83,14 +83,18 @@ var Render = {}
 
     initlayout(
         document.querySelector("#layoutroot"),
-        ["v",[1,15],[
-            ["c","func1"],
+        ["v",[1,20],[
+            ["h",[1,1],[["c","func1"],["c","control"]]],
             ["h",[5,6],[
                 ["v",[1,13],[["c","func2"],["c","xyt"]]],
                 ["v",[4,4,5],[["v",[1,4],[["c","func3"],["c","xy"]]],["v",[1,4],[["c","func4"],["c","yt"]]],["h",[3,2],[["v",[4,2],[["c","config_param"],["c","config_slice"]]],["c","config_render"]]]]],
             ]],
         ]],
         {
+            control: ()=>{return elm("div",{class:"control"},[
+                elm("button",{id:"playbtn"},[textelm("play")]),
+                elm("button",{id:"pausebtn"},[textelm("pause")]),
+            ])},
             func1: ()=>{return elm("div",{class:"func"},[
                 elm("div",{id:"func1"},[])
             ])},
@@ -122,16 +126,45 @@ var Render = {}
             config_render: ()=>{return elm("div",{class:"config"},[
                 config_render_ui("x-axis sampling step","Δx",0.1),
                 config_render_ui("t-axis sampling step","Δt",0.1),
-                config_render_ui("x-axis range - start","_rx",-5),
-                config_render_ui("x-axis range - end","rx_",5),
-                config_render_ui("t-axis range - start","_rt",-5),
-                config_render_ui("t-axis range - end","rt_",5),
+                config_render_ui("x-axis range - start","_rx",-10),
+                config_render_ui("x-axis range - end","rx_",10),
+                config_render_ui("t-axis range - start","_rt",-10),
+                config_render_ui("t-axis range - end","rt_",10),
             ])},
         }
     )
 }
 
 console.log(Params,Slice,Render)
+
+</script>
+<script>
+
+{
+    var playing = true;
+    var before = new Date();
+    document.getElementById("playbtn").Listen("click",()=>{
+        playing = true;
+    })
+    document.getElementById("pausebtn").Listen("click",()=>{
+        playing = false;
+    })
+    function play() {
+        delta = new Date() - before;
+        before = new Date();
+        const slider = document.getElementById("slider_t");
+        if (playing) {
+            slider.value = Number(slider.value) + delta/1000;
+            const inputEvent = new Event('input', { bubbles: true, cancelable: true });
+            slider.dispatchEvent(inputEvent);
+            if (slider.max-slider.value<0.1) {
+                slider.value = slider.min;
+            }
+        }
+        requestAnimationFrame(play);
+    }
+    requestAnimationFrame(play);
+}
 
 </script>
 <script>
@@ -181,7 +214,7 @@ requestAnimationFrame(()=>{
     renderer.setSize(render_area.width-canvas_margin*2,render_area.height-canvas_margin*2);
     camera.position.z = 10;
     camera.position.x = 6;
-    camera.position.y = 5;
+    camera.position.y = 7;
 
     // var axes = new THREE.AxesHelper(1);
     // scene.add(axes);
@@ -347,16 +380,12 @@ requestAnimationFrame(()=>{
     }
 
     draw()
-    var f=0;
     function draw() {
-        requestAnimationFrame(draw);
-        f++;
-        if (f%10==0) {
-            buildSurface();
-            buildXYslice();
-            buildYTslice();
-        }
+        buildSurface();
+        buildXYslice();
+        buildYTslice();
         renderer.render(scene, camera);
+        requestAnimationFrame(draw);
     }
 
 })
@@ -470,6 +499,14 @@ body {
         display: inline-block;
         padding: 5px 5px 5px 10px;
         margin: 7px;
+    }
+}
+
+.control {
+    height: 100%;
+    & button {
+        height: 100%;
+        width: 100px;
     }
 }
 
