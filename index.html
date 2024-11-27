@@ -3,6 +3,7 @@
     <head>
         <meta charset="utf-8">
         <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/three@0.128/examples/js/controls/OrbitControls.js"></script>
         <script src="https://cdn.jsdelivr.net/gh/neknaj/cDom/cdom.js"></script>
         <script src="https://cdn.jsdelivr.net/gh/neknaj/webSplitLayout/type1/layout.js"></script>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/neknaj/webSplitLayout/type1/layout.css"></head>
@@ -13,92 +14,280 @@
 </html>
 <script>
 
+// layout, config
+
 var Params = {}
 var Slice = {}
 var Render = {}
 
-document.querySelector("#layoutroot").addEventListener("doneinitlayout",()=>{
-    console.log("done init")
-})
-
-function config_param_ui(name,description,init_value=1,min=0,max=10) {
-    Params[name] = init_value;
-    let slider = elm("input",{type:"range",min,max,value:init_value,step:1/100},[]);
-    let input = elm("input",{type:"number",min,max,value:init_value,step:1/10},[]);
-    return elm("p",{class:"config_param_ui"},[
-        elm("label",{},[textelm(name)]),
-        elm("label",{},[textelm(":")]),
-        slider.Listen("input",(e)=>{
-            let value = Number(e.target.value);
-            Params[name] = value;
-            slider.value = value;
-            input.value = value;
-        }),
-        input.Listen("input",(e)=>{
-            let value = Number(e.target.value);
-            Params[name] = value;
-            slider.value = value;
-            input.value = value;
-        }),
-        elm("label",{},[textelm(":")]),
-        elm("label",{},[textelm(description)]),
-    ])
-}
-function config_slice_ui(name,id,init_value=1,min=0,max=10) {
-    Slice[id] = init_value;
-    let input = elm("input",{type:"number",min,max,value:init_value,step:1/10},[]);
-    return elm("p",{class:"config_slice_ui"},[
-        elm("label",{},[textelm(name)]),
-        elm("label",{},[textelm(":")]),
-        elm("label",{},[textelm(id)]),
-        elm("label",{},[textelm("=")]),
-        input.Listen("input",(e)=>{
-            let value = Number(e.target.value);
-            Slice[id] = value;
-            input.value = value;
-        }),
-    ])
-}
-function config_render_ui(name,id,init_value=1,min=0,max=10) {
-    Render[id] = init_value;
-    let input = elm("input",{type:"number",min,max,value:init_value,step:1/10},[]);
-    return elm("p",{class:"config_render_ui"},[
-        elm("label",{},[textelm(name)]),
-        elm("label",{},[textelm(":")]),
-        input.Listen("input",(e)=>{
-            let value = Number(e.target.value);
-            Render[id] = value;
-            input.value = value;
-        }),
-    ])
-}
-
-initlayout(
-    document.querySelector("#layoutroot"),
-    ["h",[5,6],[
-        ["c","xyt"],
-        ["v",[4,4,3],[["c","xy"],["c","yt"],["h",[4,3],[["c","config_param"],["v",[1,1],[["c","config_slice"],["c","config_render"]]]]]]],
-    ]],
-    {
-        xyt: ()=>{return elm("h1",{},[textelm("XYT-graph")])},
-        xy: ()=>{return elm("h1",{},[textelm("XY-graph")])},
-        yt: ()=>{return elm("h1",{},[textelm("YT-graph")])},
-        config_param: ()=>{return elm("div",{},[
-            config_param_ui("A","Amplitude"),
-            config_param_ui("T","Period"),
-            config_param_ui("λ","Wavelength"),
-            config_param_ui("φ","Initial Phase"),
-        ])},
-        config_slice: ()=>{return elm("div",{},[
-            config_slice_ui("xy - slice","t",0.01),
-            config_slice_ui("yt - slice","x",0.01),
-        ])},
-        config_render: ()=>{return elm("div",{},[
-            config_render_ui("x-axis sampling step","x",0.01),
-            config_render_ui("t-axis sampling step","t",0.01),
-        ])},
+{
+    function config_param_ui(name,description,init_value=1,min=0,max=10) {
+        Params[name] = init_value;
+        let slider = elm("input",{type:"range",min,max,value:init_value,step:1/100},[]);
+        let input = elm("input",{type:"number",min,max,value:init_value,step:1/10},[]);
+        return elm("p",{class:"config_param_ui"},[
+            elm("label",{},[textelm(name)]),
+            elm("label",{},[textelm(":")]),
+            slider.Listen("input",(e)=>{
+                let value = Number(e.target.value);
+                Params[name] = value;
+                slider.value = value;
+                input.value = value;
+            }),
+            input.Listen("input",(e)=>{
+                let value = Number(e.target.value);
+                Params[name] = value;
+                slider.value = value;
+                input.value = value;
+            }),
+            elm("label",{},[textelm(":")]),
+            elm("label",{},[textelm(description)]),
+        ])
     }
-)
+    function config_slice_ui(name,id,init_value=1,min=-5,max=5) {
+        Slice[id] = init_value;
+        let slider = elm("input",{type:"range",min,max,value:init_value,step:1/100},[]);
+        let input = elm("input",{type:"number",min,max,value:init_value,step:1/10},[]);
+        return elm("p",{class:"config_slice_ui"},[
+            elm("label",{},[textelm(name)]),
+            elm("label",{},[textelm(":")]),
+            elm("label",{},[textelm(id)]),
+            elm("label",{},[textelm("=")]),
+            slider.Listen("input",(e)=>{
+                let value = Number(e.target.value);
+                Slice[id] = value;
+                input.value = value;
+            }),
+            input.Listen("input",(e)=>{
+                let value = Number(e.target.value);
+                Slice[id] = value;
+                input.value = value;
+            }),
+        ])
+    }
+    function config_render_ui(name,id,init_value=1,min=-10,max=10) {
+        Render[id] = init_value;
+        let input = elm("input",{type:"number",min,max,value:init_value,step:1/10},[]);
+        return elm("p",{class:"config_render_ui"},[
+            elm("label",{},[textelm(name)]),
+            elm("label",{},[textelm(":")]),
+            input.Listen("input",(e)=>{
+                let value = Number(e.target.value);
+                Render[id] = value;
+                input.value = value;
+            }),
+        ])
+    }
+
+    initlayout(
+        document.querySelector("#layoutroot"),
+        ["h",[5,6],[
+            ["c","xyt"],
+            ["v",[4,4,5],[["c","xy"],["c","yt"],["h",[3,2],[["v",[4,2],[["c","config_param"],["c","config_slice"]]],["c","config_render"]]]]],
+        ]],
+        {
+            xyt: ()=>{return elm("canvas",{id:"xyt-out"},[])},
+            xy: ()=>{return elm("div",{},[textelm("XY-graph")])},
+            yt: ()=>{return elm("div",{},[textelm("YT-graph")])},
+            config_param: ()=>{return elm("div",{class:"config"},[
+                config_param_ui("A","Amplitude"),
+                config_param_ui("T","Period"),
+                config_param_ui("λ","Wavelength"),
+                config_param_ui("φ","Initial Phase"),
+            ])},
+            config_slice: ()=>{return elm("div",{class:"config"},[
+                config_slice_ui("xy - slice","t",0),
+                config_slice_ui("yt - slice","x",0),
+            ])},
+            config_render: ()=>{return elm("div",{class:"config"},[
+                textelm("XYT-graph"),
+                config_render_ui("x-axis sampling step","Δx",0.1),
+                config_render_ui("t-axis sampling step","Δt",0.1),
+                config_render_ui("x-axis range - start","_rx",-5),
+                config_render_ui("x-axis range - end","rx_",5),
+                config_render_ui("t-axis range - start","_rt",-5),
+                config_render_ui("t-axis range - end","rt_",5),
+            ])},
+        }
+    )
+}
+
+console.log(Params,Slice,Render)
+
+</script>
+<script>
+
+function makeFuncTX() {
+    const A = Params.A;
+    const T = Params.T;
+    const λ = Params.λ;
+    const φ = Params.φ;
+    return (t,x)=>A*Math.sin(t/T-x/λ+φ);
+}
+
+</script>
+<script>
+
+// XYT graph
+
+requestAnimationFrame(()=>{
+    const canvas_margin = 1;
+    const render_area = document.getElementById('xyt-out').parentNode.getBoundingClientRect();
+    console.log(render_area)
+    const canvas = document.getElementById('xyt-out');
+    canvas.width = render_area.width-canvas_margin*2;
+    canvas.height = render_area.height-canvas_margin*2;
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(90, (render_area.width-canvas_margin*2)/(render_area.height-canvas_margin*2), 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({canvas});
+    renderer.setSize(render_area.width-canvas_margin*2,render_area.height-canvas_margin*2);
+    camera.position.z = 10;
+    camera.position.x = 3;
+    camera.position.y = 5;
+
+    // var axes = new THREE.AxesHelper(1);
+    // scene.add(axes);
+
+    const controls = new THREE.OrbitControls( camera, renderer.domElement );
+
+    var prevTime = performance.now();
+    const moveSpeed = 20;
+    const keymap = {
+        "forward": ["e","w"],
+        "back": ["i","s"],
+        "left": ["u","a"],
+        "right": ["f","d"],
+        "up": [","],
+        "down": ["."],
+    }
+
+    let Surface;
+    let XYslice;
+    let YTslice;
+    function r(x,n) {
+        return Math.round(x/n)
+    }
+    function buildSurface() {
+        if (Surface) {scene.remove(Surface);}
+        Surface = new THREE.Group();
+        scene.add(Surface);
+        const y = makeFuncTX();
+        const texscale = 0.2;
+        var positions = [];
+        var indices1 = [];
+        var indices2 = [];
+        var dic = {};
+        for (let x=Render._rx;x<=Render.rx_+Render.Δx;x+=Render.Δx) {
+            dic[r(x,Render.Δx)] = {};
+            for (let t=Render._rt;t<=Render.rt_+Render.Δt;t+=Render.Δt) {
+                dic[r(x,Render.Δx)][r(t,Render.Δt)] = positions.length;
+                positions.push([x,y(t,x),-t]);
+            }
+        }
+        for (let x=Render._rx;x<Render.rx_;x+=Render.Δx) {
+            for (let t=Render._rt;t<Render.rt_;t+=Render.Δt) {
+                const idx1 = dic[r(x,Render.Δx)            ][r(t,Render.Δt)            ];
+                const idx2 = dic[r(x + Render.Δx,Render.Δx)][r(t,Render.Δt)            ];
+                const idx3 = dic[r(x,Render.Δx)            ][r(t + Render.Δt,Render.Δt)];
+                const idx4 = dic[r(x + Render.Δx,Render.Δx)][r(t + Render.Δt,Render.Δt)];
+                if ( Math.abs(Math.round(x/texscale))%2 ^ Math.abs(Math.round(t/texscale))%2 ) {
+                    indices1.push(idx1, idx2, idx3);
+                    indices1.push(idx2, idx4, idx3);
+                    indices2.push(idx1, idx3, idx2);
+                    indices2.push(idx2, idx3, idx4);
+                } else {
+                    indices2.push(idx1, idx2, idx3);
+                    indices2.push(idx2, idx4, idx3);
+                    indices1.push(idx1, idx3, idx2);
+                    indices1.push(idx2, idx3, idx4);
+                }
+            }
+        }
+        var vertices = new Float32Array(positions.length *3);
+        for (var i=0;i<positions.length;i++) {
+            vertices[i*3+0] = positions[i][0];
+            vertices[i*3+1] = positions[i][1];
+            vertices[i*3+2] = positions[i][2];
+        }
+        {
+            var geometry = new THREE.BufferGeometry();
+            geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+            geometry.setIndex(new THREE.BufferAttribute(new Uint16Array(indices1), 1));
+            var material = new THREE.MeshBasicMaterial({
+                color: 0xaaaa00,
+                opacity: 0.7,
+                transparent: true,
+                depthWrite: true,
+            });
+            var mesh = new THREE.Mesh(geometry, material);
+            Surface.add(mesh);
+        }
+        {
+            var geometry = new THREE.BufferGeometry();
+            geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+            geometry.setIndex(new THREE.BufferAttribute(new Uint16Array(indices2), 1));
+            var material = new THREE.MeshBasicMaterial({
+                color: 0xaa00aa,
+                opacity: 0.7,
+                transparent: true,
+                depthWrite: true,
+            });
+            var mesh = new THREE.Mesh(geometry, material);
+            Surface.add(mesh);
+        }
+    }
+    function buildXYslice() {
+        if (XYslice) {scene.remove(XYslice);}
+        XYslice = new THREE.Group();
+        scene.add(XYslice);
+
+        var material = new THREE.MeshBasicMaterial({
+            color: 0x00ffff,
+            opacity: 0.3,
+            transparent: true,
+            depthWrite: true,
+            side: THREE.DoubleSide,
+        });
+        {
+            var geometry = new THREE.PlaneGeometry((Render.rx_-Render._rx)*1.2, Params.A*2*1.2);
+            var square = new THREE.Mesh(geometry, material);
+            square.position.x = (Render.rx_+Render._rx)/2;
+            square.position.z = -Slice.t;
+            XYslice.add(square);
+        }
+    }
+    function buildYTslice() {
+        if (YTslice) {scene.remove(YTslice);}
+        YTslice = new THREE.Group();
+        scene.add(YTslice);
+
+        var material = new THREE.MeshBasicMaterial({
+            color: 0x00ffff,
+            opacity: 0.3,
+            transparent: true,
+            depthWrite: true,
+            side: THREE.DoubleSide,
+        });
+        {
+            var geometry = new THREE.PlaneGeometry((Render.rt_-Render._rt)*1.2, Params.A*2*1.2);
+            var square = new THREE.Mesh(geometry, material);
+            square.rotation.y = Math.PI/2;
+            square.position.x = (Render.rt_+Render._rt)/2;
+            square.position.x = Slice.x;
+            YTslice.add(square);
+        }
+    }
+
+    draw()
+    function draw() {
+        requestAnimationFrame(draw);
+        buildSurface();
+        buildXYslice();
+        buildYTslice();
+        renderer.render(scene, camera);
+    }
+
+})
 
 </script>
 <style>
@@ -118,7 +307,7 @@ body {
     height: 100%;
     width: 100%;
 }
-.layoutcontent {
+.config {
     --padding: 10px;
     overflow: auto;
     padding: var(--padding);
