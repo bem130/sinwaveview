@@ -7,6 +7,8 @@
         <script src="https://cdn.jsdelivr.net/gh/neknaj/cDom/cdom.js"></script>
         <script src="https://cdn.jsdelivr.net/gh/neknaj/webSplitLayout/type1/layout.js"></script>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/neknaj/webSplitLayout/type1/layout.css"></head>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.css">
+        <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.js"></script>
     </head>
     <body>
         <div id="layoutroot"></div>
@@ -81,26 +83,43 @@ var Render = {}
 
     initlayout(
         document.querySelector("#layoutroot"),
-        ["h",[5,6],[
-            ["c","xyt"],
-            ["v",[4,4,5],[["c","xy"],["c","yt"],["h",[3,2],[["v",[4,2],[["c","config_param"],["c","config_slice"]]],["c","config_render"]]]]],
+        ["v",[1,15],[
+            ["c","func1"],
+            ["h",[5,6],[
+                ["v",[1,13],[["c","func2"],["c","xyt"]]],
+                ["v",[4,4,5],[["v",[1,4],[["c","func3"],["c","xy"]]],["v",[1,4],[["c","func4"],["c","yt"]]],["h",[3,2],[["v",[4,2],[["c","config_param"],["c","config_slice"]]],["c","config_render"]]]]],
+            ]],
         ]],
         {
+            func1: ()=>{return elm("div",{class:"func"},[
+                elm("div",{id:"func1"},[])
+            ])},
+            func2: ()=>{return elm("div",{class:"func"},[
+                elm("h2",{},[textelm("XYT Graph")]),
+                elm("div",{id:"func2"},[])
+            ])},
+            func3: ()=>{return elm("div",{class:"func"},[
+                elm("h2",{},[textelm("XY Graph")]),
+                elm("div",{id:"func3"},[])
+            ])},
+            func4: ()=>{return elm("div",{class:"func"},[
+                elm("h2",{},[textelm("YT Graph")]),
+                elm("div",{id:"func4"},[])
+            ])},
             xyt: ()=>{return elm("canvas",{id:"xyt-out"},[])},
-            xy: ()=>{return elm("div",{},[textelm("XY-graph")])},
-            yt: ()=>{return elm("div",{},[textelm("YT-graph")])},
+            xy: ()=>{return elm("canvas",{id:"xy-out"},[])},
+            yt: ()=>{return elm("canvas",{id:"yt-out"},[])},
             config_param: ()=>{return elm("div",{class:"config"},[
                 config_param_ui("A","Amplitude"),
                 config_param_ui("T","Period"),
                 config_param_ui("λ","Wavelength"),
-                config_param_ui("φ","Initial Phase"),
+                config_param_ui("φ","Initial Phase",0),
             ])},
             config_slice: ()=>{return elm("div",{class:"config"},[
                 config_slice_ui("xy - slice","t",0),
                 config_slice_ui("yt - slice","x",0),
             ])},
             config_render: ()=>{return elm("div",{class:"config"},[
-                textelm("XYT-graph"),
                 config_render_ui("x-axis sampling step","Δx",0.1),
                 config_render_ui("t-axis sampling step","Δt",0.1),
                 config_render_ui("x-axis range - start","_rx",-5),
@@ -125,6 +144,25 @@ function makeFuncTX() {
     return (t,x)=>A*Math.sin(t/T-x/λ+φ);
 }
 
+addEventListener("DOMContentLoaded", (event) => {
+    katex.render("y(t,x) = \\mathbf{A} \\sin \\left( \\frac{t}{\\mathbf{T}} - \\frac{x}{\\lambda} + \\varphi \\right)", document.getElementById("func1"), {
+        throwOnError: false
+    });
+    function draw() {
+        katex.render(`y(t,x) = \\mathbf{${Params.A}} \\sin \\left( \\frac{t}{\\mathbf{${Params.T}}} - \\frac{x}{${Params.λ}} + ${Params.φ} \\right)`, document.getElementById("func2"), {
+            throwOnError: false
+        });
+        katex.render(`y(${Slice.t},x) = \\mathbf{${Params.A}} \\sin \\left( \\frac{${Slice.t}}{\\mathbf{${Params.T}}} - \\frac{x}{${Params.λ}} + ${Params.φ} \\right)`, document.getElementById("func3"), {
+            throwOnError: false
+        });
+        katex.render(`y(t,${Slice.x}) = \\mathbf{${Params.A}} \\sin \\left( \\frac{t}{\\mathbf{${Params.T}}} - \\frac{${Slice.x}}{${Params.λ}} + ${Params.φ} \\right)`, document.getElementById("func4"), {
+            throwOnError: false
+        });
+        requestAnimationFrame(draw);
+    }
+    requestAnimationFrame(draw);
+});
+
 </script>
 <script>
 
@@ -142,7 +180,7 @@ requestAnimationFrame(()=>{
     const renderer = new THREE.WebGLRenderer({canvas});
     renderer.setSize(render_area.width-canvas_margin*2,render_area.height-canvas_margin*2);
     camera.position.z = 10;
-    camera.position.x = 3;
+    camera.position.x = 6;
     camera.position.y = 5;
 
     // var axes = new THREE.AxesHelper(1);
@@ -324,6 +362,91 @@ requestAnimationFrame(()=>{
 })
 
 </script>
+<script>
+
+// XY Graph, YT Graph
+
+{
+    const xycnv = document.getElementById("xy-out");
+    const ytcnv = document.getElementById("yt-out");
+    const xyctx = xycnv.getContext("2d");
+    const ytctx = ytcnv.getContext("2d");
+    function renderXY() {
+        const y = makeFuncTX();
+        const pbr = xycnv.parentNode.getBoundingClientRect();
+        xycnv.height = pbr.height;
+        xycnv.width = pbr.width;
+        xyctx.fillStyle = '#000';
+        xyctx.fillRect(0, 0, xycnv.width, xycnv.height);
+        let origin = [pbr.width/2,pbr.height/2];
+        let margin = 10;
+        let scale = 50;
+        { // 軸
+            xyctx.strokeStyle = '#555';
+            xyctx.lineWidth = 2;
+            xyctx.beginPath();
+            xyctx.moveTo(margin, origin[1]);
+            xyctx.lineTo(xycnv.width-margin, origin[1]);
+            xyctx.stroke();
+            xyctx.beginPath();
+            xyctx.moveTo(origin[0],margin);
+            xyctx.lineTo(origin[0],xycnv.height-margin);
+            xyctx.stroke();
+        }
+        { // 曲線
+            xyctx.strokeStyle = '#77f';
+            xyctx.lineWidth = 2;
+            xyctx.beginPath();
+            xyctx.moveTo(Render._rx*scale+origin[0], origin[1]-y(Slice.t,Render._rx)*scale);
+            for (let x=Render._rx;x<Render.rx_;x+=Render.Δx) {
+                xyctx.lineTo(x*scale+origin[0], origin[1]-y(Slice.t,x)*scale);
+            }
+            xyctx.stroke();
+        }
+    }
+    function renderYT() {
+        const y = makeFuncTX();
+        const pbr = ytcnv.parentNode.getBoundingClientRect();
+        ytcnv.height = pbr.height;
+        ytcnv.width = pbr.width;
+        ytctx.fillStyle = '#000';
+        ytctx.fillRect(0, 0, ytcnv.width, ytcnv.height);
+        let origin = [pbr.width/2,pbr.height/2];
+        let margin = 10;
+        let scale = 50;
+        { // 軸
+            ytctx.strokeStyle = '#555';
+            ytctx.lineWidth = 2;
+            ytctx.beginPath();
+            ytctx.moveTo(margin, origin[1]);
+            ytctx.lineTo(xycnv.width-margin, origin[1]);
+            ytctx.stroke();
+            ytctx.beginPath();
+            ytctx.moveTo(origin[0],margin);
+            ytctx.lineTo(origin[0],xycnv.height-margin);
+            ytctx.stroke();
+        }
+        { // 曲線
+            ytctx.strokeStyle = '#f77';
+            ytctx.lineWidth = 2;
+            ytctx.beginPath();
+            // ytctx.lineTo(x*scale+origin[0], origin[1]-y(Slice.t,x)*scale);
+            for (let t=Render._rt;t<Render.rt_;t+=Render.Δt) {
+                ytctx.lineTo(t*scale+origin[0], origin[1]-y(t,Slice.x)*scale);
+            }
+            ytctx.stroke();
+        }
+    }
+    draw()
+    function draw() {
+        requestAnimationFrame(draw);
+        renderXY();
+        renderYT();
+    }
+}
+
+
+</script>
 <style>
 
 :root {
@@ -341,6 +464,15 @@ body {
     height: 100%;
     width: 100%;
 }
+
+.func {
+    & > h2, & > div {
+        display: inline-block;
+        padding: 5px 5px 5px 10px;
+        margin: 7px;
+    }
+}
+
 .config {
     --padding: 10px;
     overflow: auto;
