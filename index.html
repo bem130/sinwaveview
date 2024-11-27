@@ -21,7 +21,7 @@ var Slice = {}
 var Render = {}
 
 {
-    function config_param_ui(name,description,init_value=1,min=0,max=10) {
+    function config_param_ui(name,description,init_value=1,min=0.001,max=10) {
         Params[name] = init_value;
         let slider = elm("input",{type:"range",min,max,value:init_value,step:1/100},[]);
         let input = elm("input",{type:"number",min,max,value:init_value,step:1/10},[]);
@@ -215,7 +215,7 @@ requestAnimationFrame(()=>{
             geometry.setIndex(new THREE.BufferAttribute(new Uint16Array(indices1), 1));
             var material = new THREE.MeshBasicMaterial({
                 color: 0xaaaa00,
-                opacity: 0.7,
+                opacity: 0.4,
                 transparent: true,
                 depthWrite: true,
             });
@@ -228,7 +228,7 @@ requestAnimationFrame(()=>{
             geometry.setIndex(new THREE.BufferAttribute(new Uint16Array(indices2), 1));
             var material = new THREE.MeshBasicMaterial({
                 color: 0xaa00aa,
-                opacity: 0.7,
+                opacity: 0.4,
                 transparent: true,
                 depthWrite: true,
             });
@@ -240,50 +240,84 @@ requestAnimationFrame(()=>{
         if (XYslice) {scene.remove(XYslice);}
         XYslice = new THREE.Group();
         scene.add(XYslice);
+        const y = makeFuncTX();
 
-        var material = new THREE.MeshBasicMaterial({
-            color: 0x00ffff,
-            opacity: 0.3,
-            transparent: true,
-            depthWrite: true,
-            side: THREE.DoubleSide,
-        });
-        {
-            var geometry = new THREE.PlaneGeometry((Render.rx_-Render._rx)*1.2, Params.A*2*1.2);
-            var square = new THREE.Mesh(geometry, material);
-            square.position.x = (Render.rx_+Render._rx)/2;
-            square.position.z = -Slice.t;
-            XYslice.add(square);
+        { // 面
+            var material = new THREE.MeshBasicMaterial({
+                color: 0x7777ff,
+                opacity: 0.3,
+                transparent: true,
+                depthWrite: true,
+                side: THREE.DoubleSide,
+            });
+            {
+                var geometry = new THREE.PlaneGeometry((Render.rx_-Render._rx)*1.2, Params.A*2*1.2);
+                var square = new THREE.Mesh(geometry, material);
+                square.position.x = (Render.rx_+Render._rx)/2;
+                square.position.z = -Slice.t;
+                XYslice.add(square);
+            }
+        }
+        { // 線
+            const line = new THREE.Group();
+            const material = new THREE.MeshBasicMaterial({ color: 0x5555ff });
+            for (let x=Render._rx;x<=Render.rx_+Render.Δx;x+=Render.Δx) {
+                const sphere = new THREE.Mesh(new THREE.SphereGeometry(Render.Δx), material);
+                sphere.position.x = x;
+                sphere.position.z = -Slice.t;
+                sphere.position.y = y(Slice.t,x);
+                line.add(sphere);
+            }
+            XYslice.add(line);
         }
     }
     function buildYTslice() {
         if (YTslice) {scene.remove(YTslice);}
         YTslice = new THREE.Group();
         scene.add(YTslice);
+        const y = makeFuncTX();
 
-        var material = new THREE.MeshBasicMaterial({
-            color: 0x00ffff,
-            opacity: 0.3,
-            transparent: true,
-            depthWrite: true,
-            side: THREE.DoubleSide,
-        });
         {
-            var geometry = new THREE.PlaneGeometry((Render.rt_-Render._rt)*1.2, Params.A*2*1.2);
-            var square = new THREE.Mesh(geometry, material);
-            square.rotation.y = Math.PI/2;
-            square.position.x = (Render.rt_+Render._rt)/2;
-            square.position.x = Slice.x;
-            YTslice.add(square);
+            var material = new THREE.MeshBasicMaterial({
+                color: 0xff7777,
+                opacity: 0.3,
+                transparent: true,
+                depthWrite: true,
+                side: THREE.DoubleSide,
+            });
+            {
+                var geometry = new THREE.PlaneGeometry((Render.rt_-Render._rt)*1.2, Params.A*2*1.2);
+                var square = new THREE.Mesh(geometry, material);
+                square.rotation.y = Math.PI/2;
+                square.position.x = (Render.rt_+Render._rt)/2;
+                square.position.x = Slice.x;
+                YTslice.add(square);
+            }
+        }
+        { // 線
+            const line = new THREE.Group();
+            const material = new THREE.MeshBasicMaterial({ color: 0xff5555 });
+            for (let t=Render._rt;t<Render.rt_;t+=Render.Δt) {
+                const sphere = new THREE.Mesh(new THREE.SphereGeometry(Render.Δx), material);
+                sphere.position.x = Slice.x;
+                sphere.position.z = -t;
+                sphere.position.y = y(t,Slice.x);
+                line.add(sphere);
+            }
+            YTslice.add(line);
         }
     }
 
     draw()
+    var f=0;
     function draw() {
         requestAnimationFrame(draw);
-        buildSurface();
-        buildXYslice();
-        buildYTslice();
+        f++;
+        if (f%10==0) {
+            buildSurface();
+            buildXYslice();
+            buildYTslice();
+        }
         renderer.render(scene, camera);
     }
 
